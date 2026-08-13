@@ -49,6 +49,7 @@ jobs:
       - name: Build firmware
         run: |
           set -e
+          export HOST_CFLAGS="-Wno-error=macro-redefined"
           make -j2 V=s
 
       - name: Upload firmware artifact
