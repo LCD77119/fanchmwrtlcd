@@ -1,34 +1,3 @@
-name: Build FanChmWrt AX3000T
-
-on:
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
-
-      - name: Cache compile resource
-        uses: actions/cache@v4
-        with:
-          path: |
-            dl
-            build_dir
-          key: ${{ runner.os }}-fanchmwrt-ax3000t-v2
-
-      - name: Install build tools
-        run: |
-          sudo apt update
-          sudo apt install -y \
-          build-essential libncurses-dev zlib1g-dev gawk git gettext unzip file rsync python3
-
-      - name: Update feeds source
-        run: |
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
-
       - name: Configure device & keep only app-center
         run: |
           echo "CONFIG_TARGET_mediatek=y" >> .config
@@ -44,15 +13,7 @@ jobs:
           # 仅保留FanChmWrt官方应用商店
           echo "CONFIG_PACKAGE_luci-app-fwx-app-center=y" >> .config
 
+          # 关闭elfutils调试工具，规避宏重定义编译故障，路由器固件不需要它
+          echo "CONFIG_PACKAGE_elfutils=n" >> .config
+
           make defconfig
-
-      - name: Build firmware
-        run: |
-          set -e
-          make HOST_CFLAGS="-Wno-error=macro-redefined" -j2 V=s
-
-      - name: Upload firmware artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: AX3000T-FanChmWrt-OnlyAppCenter
-          path: bin/targets/**
